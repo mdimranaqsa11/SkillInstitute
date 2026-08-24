@@ -8,7 +8,8 @@ import StatusBadge from '../common/StatusBadge';
 export default function ResultRow({ result, index = 0, onPress }) {
   const passed = result.status === 'passed';
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [styles.row, pressed && styles.pressed]}>
+    <Pressable onPress={onPress} 
+    style={({ pressed }) => [styles.row, pressed && styles.pressed]}>
       <View style={styles.left}>
         <Avatar name={result.studentName} index={index} size={40} />
         <View>
