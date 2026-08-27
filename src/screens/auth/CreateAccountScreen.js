@@ -15,25 +15,62 @@ import Icon from '../../components/common/Icon';
 import Input from '../../components/forms/Input';
 import PrimaryButton from '../../components/common/PrimaryButton';
 import { useAuth } from '../../context/AuthContext';
+import { signupInstitute } from '../../api/institutes';
+import { ApiError } from '../../api/client';
 
-const LOGO_URI =
-  'https://lh3.googleusercontent.com/aida-public/AB6AXuAz9B9StSXHK4JKaLVSZC95Bmu0GLuT2ZtoY4k1CmTwu3HWni-b9wu-Lfriio9RuJsfh9S-YxnbiXu2jTEXDHmA6J9PIpJ8JDKyyAnHIigIz2SswP5tUpqRMA_1L4nKbkdswOX501Zm51A3nj6JImP1FJFSbsCR_doCq3sgjKWGGC5--l5KAQJLj-BHvj_K9pWinkcM5GLZoUfA2F4Ef4GySBBdeUuUaN2KBlC1xox5JiH65QYalkXh';
+const LOGO = require('../../assets/logo.png');
 
 export default function CreateAccountScreen({ navigation }) {
   const { login } = useAuth();
   const [instituteName, setInstituteName] = useState('');
+  const [instituteCode, setInstituteCode] = useState('');
   const [adminName, setAdminName] = useState('');
   const [email, setEmail] = useState('');
   const [mobile, setMobile] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [agreed, setAgreed] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
+
+  const submit = async () => {
+    setError(null);
+    if (!instituteName.trim() || !instituteCode.trim() || !email.trim() || !password) {
+      setError('Institute name, code, email, and password are required.');
+      return;
+    }
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters.');
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+    setSaving(true);
+    try {
+      await signupInstitute({
+        name: instituteName.trim(),
+        code: instituteCode.trim(),
+        email: email.trim(),
+        phone: mobile.trim() || undefined,
+        admin_email: email.trim(),
+        admin_password: password,
+        admin_full_name: adminName.trim() || undefined,
+      });
+      await login(email.trim(), password);
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : 'Failed to create account');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       <KeyboardAvoidingView
         style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <ScrollView
           contentContainerStyle={styles.scrollContent}
@@ -41,7 +78,7 @@ export default function CreateAccountScreen({ navigation }) {
         >
           <View style={styles.card}>
             <View style={styles.header}>
-              <Image source={{ uri: LOGO_URI }} style={styles.logo} />
+              <Image source={LOGO} style={styles.logo} />
               <Text style={styles.title}>Create Account</Text>
               <Text style={styles.subtitle}>Set up your administrator portal</Text>
             </View>
@@ -53,6 +90,14 @@ export default function CreateAccountScreen({ navigation }) {
                 placeholder="e.g. Skill Institute"
                 value={instituteName}
                 onChangeText={setInstituteName}
+              />
+              <Input
+                label="Institute Code"
+                icon="tag"
+                placeholder="e.g. SKILL01"
+                autoCapitalize="characters"
+                value={instituteCode}
+                onChangeText={setInstituteCode}
               />
               <Input
                 label="Admin Name"
@@ -71,7 +116,7 @@ export default function CreateAccountScreen({ navigation }) {
                 onChangeText={setEmail}
               />
               <Input
-                label="Mobile Number"
+                label="Mobile Number (optional)"
                 icon="phone-iphone"
                 placeholder="+1 (555) 000-0000"
                 keyboardType="phone-pad"
@@ -81,7 +126,7 @@ export default function CreateAccountScreen({ navigation }) {
               <Input
                 label="Password"
                 icon="lock"
-                placeholder="••••••••"
+                placeholder="Min 8 characters"
                 secureTextEntry
                 value={password}
                 onChangeText={setPassword}
@@ -105,11 +150,14 @@ export default function CreateAccountScreen({ navigation }) {
                 </Text>
               </Pressable>
 
+              {error && <Text style={styles.errorText}>{error}</Text>}
+
               <PrimaryButton
                 title="Create Account"
                 icon="arrow-forward"
-                onPress={login}
+                onPress={submit}
                 disabled={!agreed}
+                loading={saving}
               />
             </View>
 
@@ -212,6 +260,11 @@ const styles = StyleSheet.create({
   link: {
     color: colors.primary,
     fontWeight: '600',
+  },
+  errorText: {
+    ...typography.bodyMd,
+    color: colors.error,
+    textAlign: 'center',
   },
   footer: {
     alignItems: 'center',

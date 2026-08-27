@@ -6,20 +6,18 @@ import Avatar from '../common/Avatar';
 import StatusBadge from '../common/StatusBadge';
 
 export default function ResultRow({ result, index = 0, onPress }) {
-  const passed = result.status === 'passed';
   return (
-    <Pressable onPress={onPress} 
-    style={({ pressed }) => [styles.row, pressed && styles.pressed]}>
+    <Pressable onPress={onPress} style={({ pressed }) => [styles.row, pressed && styles.pressed]}>
       <View style={styles.left}>
-        <Avatar name={result.studentName} index={index} size={40} />
+        <Avatar name={`Student ${result.student_id}`} index={index} size={40} />
         <View>
-          <Text style={styles.name}>{result.studentName}</Text>
-          <Text style={styles.meta}>ID: {result.studentId} • {result.courseName}</Text>
+          <Text style={styles.name}>Student #{result.student_id}</Text>
+          <Text style={styles.meta}>{result.examTitle}{result.courseName ? ` • ${result.courseName}` : ''}</Text>
         </View>
       </View>
       <View style={styles.right}>
-        <Text style={styles.grade}>{result.grade}</Text>
-        <StatusBadge status={result.status} label={passed ? 'Passed' : 'Failed'} />
+        <Text style={styles.grade}>{result.percentage != null ? `${result.percentage}%` : '—'}</Text>
+        <StatusBadge status={result.result_status} />
         <Icon name="chevron-right" size={18} color={colors.outline} />
       </View>
     </Pressable>

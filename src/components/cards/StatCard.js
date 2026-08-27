@@ -1,9 +1,10 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { colors, radius, typography, spacing } from '../../constants';
+import { colors, radius, shadow, typography, spacing } from '../../constants';
 import Icon from '../common/Icon';
+import Skeleton from '../feedback/Skeleton';
 
-export default function StatCard({ icon, label, value, tint = colors.primary, tintBg }) {
+export default function StatCard({ icon, label, value, tint = colors.primary, tintBg, loading }) {
   return (
     <View style={styles.card}>
       <View style={[styles.iconWrap, { backgroundColor: tintBg || `${tint}1A` }]}>
@@ -11,7 +12,11 @@ export default function StatCard({ icon, label, value, tint = colors.primary, ti
       </View>
       <View>
         <Text style={styles.label}>{label}</Text>
-        <Text style={styles.value}>{value}</Text>
+        {loading ? (
+          <Skeleton width={40} height={24} style={styles.valueSkeleton} />
+        ) : (
+          <Text style={styles.value}>{value}</Text>
+        )}
       </View>
     </View>
   );
@@ -24,14 +29,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceContainerLowest,
     borderRadius: radius.xl,
     borderWidth: 1,
-    borderColor: 'rgba(195,198,215,0.3)',
+    borderColor: colors.surfaceVariant,
     padding: spacing.md,
     gap: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    ...shadow.sm,
   },
   iconWrap: {
     width: 40,
@@ -52,5 +53,8 @@ const styles = StyleSheet.create({
     ...typography.headlineLgMobile,
     fontSize: 24,
     color: colors.onSurface,
+  },
+  valueSkeleton: {
+    marginTop: 2,
   },
 });

@@ -17,20 +17,24 @@ import PrimaryButton from '../../components/common/PrimaryButton';
 import SecondaryButton from '../../components/common/SecondaryButton';
 import { useAuth } from '../../context/AuthContext';
 
-const LOGO_URI =
-  'https://lh3.googleusercontent.com/aida-public/AB6AXuAz9B9StSXHK4JKaLVSZC95Bmu0GLuT2ZtoY4k1CmTwu3HWni-b9wu-Lfriio9RuJsfh9S-YxnbiXu2jTEXDHmA6J9PIpJ8JDKyyAnHIigIz2SswP5tUpqRMA_1L4nKbkdswOX501Zm51A3nj6JImP1FJFSbsCR_doCq3sgjKWGGC5--l5KAQJLj-BHvj_K9pWinkcM5GLZoUfA2F4Ef4GySBBdeUuUaN2KBlC1xox5JiH65QYalkXh';
+const LOGO = require('../../assets/logo.png');
 
 export default function LoginScreen({ navigation }) {
-  const { login } = useAuth();
+  const { login, loading, error } = useAuth();
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
+
+  const handleLogin = () => {
+    if (!identifier.trim() || !password) return;
+    login(identifier.trim(), password);
+  };
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       <KeyboardAvoidingView
         style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <ScrollView
           contentContainerStyle={styles.scrollContent}
@@ -38,7 +42,7 @@ export default function LoginScreen({ navigation }) {
         >
           <View style={styles.card}>
             <View style={styles.header}>
-              <Image source={{ uri: LOGO_URI }} style={styles.logo} />
+              <Image source={LOGO} style={styles.logo} />
               <Text style={styles.title}>Welcome Back</Text>
               <Text style={styles.subtitle}>Manage your institute with ease</Text>
             </View>
@@ -68,13 +72,12 @@ export default function LoginScreen({ navigation }) {
                   </View>
                   <Text style={styles.rememberText}>Remember me</Text>
                 </Pressable>
-                <Pressable onPress={() => navigation.navigate('ForgotPassword')} hitSlop={8}>
-                  <Text style={styles.link}>Forgot Password?</Text>
-                </Pressable>
               </View>
 
+              {error && <Text style={styles.errorText}>{error}</Text>}
+
               <View style={styles.actions}>
-                <PrimaryButton title="Login" onPress={login} />
+                <PrimaryButton title="Login" onPress={handleLogin} loading={loading} />
                 <SecondaryButton
                   title="Create Account"
                   onPress={() => navigation.navigate('CreateAccount')}
@@ -165,9 +168,10 @@ const styles = StyleSheet.create({
     ...typography.bodyMd,
     color: colors.onSurfaceVariant,
   },
-  link: {
-    ...typography.labelMd,
-    color: colors.primary,
+  errorText: {
+    ...typography.bodyMd,
+    color: colors.error,
+    textAlign: 'center',
   },
   actions: {
     gap: spacing.md,

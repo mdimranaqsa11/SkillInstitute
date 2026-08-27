@@ -1,13 +1,17 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { colors, typography, spacing, dimensions } from '../../constants';
+import { colors, radius, shadow, typography, spacing, dimensions } from '../../constants';
 import Icon from '../common/Icon';
 
 export default function DetailHeader({ title, onBack, right }) {
   return (
     <View style={styles.header}>
-      <Pressable onPress={onBack} style={styles.iconButton} hitSlop={8}>
-        <Icon name="arrow-back" size={22} color={colors.onSurfaceVariant} />
+      <Pressable
+        onPress={onBack}
+        style={({ pressed }) => [styles.backButton, pressed && styles.backButtonPressed]}
+        hitSlop={8}
+      >
+        <Icon name="arrow-back" size={20} color={colors.onSurface} />
       </Pressable>
       <Text style={styles.title} numberOfLines={1}>{title}</Text>
       <View style={styles.iconButton}>{right}</View>
@@ -20,10 +24,20 @@ const styles = StyleSheet.create({
     height: dimensions.topBarHeight,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: spacing.sm,
+    paddingHorizontal: spacing.md,
     backgroundColor: colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.surfaceVariant,
+    ...shadow.sm,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.full,
+    backgroundColor: colors.surfaceContainerHigh,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  backButtonPressed: {
+    opacity: 0.8,
   },
   iconButton: {
     width: 40,
@@ -33,7 +47,8 @@ const styles = StyleSheet.create({
   },
   title: {
     ...typography.headlineMd,
-    fontSize: 17,
+    fontSize: 18,
+    fontWeight: '700',
     color: colors.onSurface,
     flex: 1,
     textAlign: 'center',

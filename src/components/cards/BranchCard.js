@@ -3,53 +3,48 @@ import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { colors, radius, typography, spacing } from '../../constants';
 import Icon from '../common/Icon';
 
+const TINTS = [colors.primary, colors.secondary, colors.tertiary];
+const ICONS = ['business', 'corporate-fare', 'domain'];
+const tintFor = id => TINTS[id % TINTS.length];
+const iconFor = id => ICONS[id % ICONS.length];
+
 export default function BranchCard({ branch, onPress }) {
+  const tint = tintFor(branch.id);
+  const isActive = branch.status === 'ACTIVE';
+
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [styles.card, pressed && styles.pressed]}>
       <View style={styles.headerRow}>
         <View style={styles.headerLeft}>
-          <View style={[styles.iconWrap, { backgroundColor: `${branch.tint}1A` }]}>
-            <Icon name={branch.icon} size={22} color={branch.tint} />
+          <View style={[styles.iconWrap, { backgroundColor: `${tint}1A` }]}>
+            <Icon name={iconFor(branch.id)} size={22} color={tint} />
           </View>
           <View>
             <Text style={styles.name}>{branch.name}</Text>
-            <View style={styles.statusRow}>
-              <View style={styles.statusDot} />
-              <Text style={styles.statusText}>Active</Text>
+            <View style={[styles.statusRow, !isActive && styles.statusRowInactive]}>
+              <View style={[styles.statusDot, !isActive && styles.statusDotInactive]} />
+              <Text style={styles.statusText}>{isActive ? 'Active' : 'Inactive'}</Text>
             </View>
           </View>
         </View>
-        <Icon name="more-vert" size={20} color={colors.onSurfaceVariant} />
-      </View>
-
-      <View style={styles.metaGrid}>
-        <View style={styles.metaCell}>
-          <Text style={styles.metaLabel}>Students</Text>
-          <View style={styles.metaValueRow}>
-            <Icon name="group" size={18} color={branch.tint} />
-            <Text style={styles.metaValue}>{branch.students}</Text>
-          </View>
-        </View>
-        <View style={styles.metaCell}>
-          <Text style={styles.metaLabel}>Administrator</Text>
-          <View style={styles.metaValueRow}>
-            <Icon name="person" size={18} color={branch.tint} />
-            <Text style={styles.metaValue}>{branch.admin}</Text>
-          </View>
-        </View>
+        <Text style={styles.code}>{branch.code}</Text>
       </View>
 
       <View style={styles.divider} />
 
       <View style={styles.contactCol}>
-        <View style={styles.contactRow}>
-          <Icon name="location-on" size={20} color={colors.outline} />
-          <Text style={styles.contactText}>{branch.address}</Text>
-        </View>
-        <View style={styles.contactRow}>
-          <Icon name="call" size={20} color={colors.outline} />
-          <Text style={styles.contactText}>{branch.phone}</Text>
-        </View>
+        {!!branch.email && (
+          <View style={styles.contactRow}>
+            <Icon name="mail" size={20} color={colors.outline} />
+            <Text style={styles.contactText}>{branch.email}</Text>
+          </View>
+        )}
+        {!!branch.phone && (
+          <View style={styles.contactRow}>
+            <Icon name="call" size={20} color={colors.outline} />
+            <Text style={styles.contactText}>{branch.phone}</Text>
+          </View>
+        )}
       </View>
     </Pressable>
   );
@@ -88,6 +83,10 @@ const styles = StyleSheet.create({
     ...typography.headlineMd,
     color: colors.onSurface,
   },
+  code: {
+    ...typography.labelMd,
+    color: colors.onSurfaceVariant,
+  },
   statusRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -99,38 +98,22 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     alignSelf: 'flex-start',
   },
+  statusRowInactive: {
+    backgroundColor: colors.errorContainer,
+  },
   statusDot: {
     width: 6,
     height: 6,
     borderRadius: 3,
     backgroundColor: colors.primary,
   },
+  statusDotInactive: {
+    backgroundColor: colors.error,
+  },
   statusText: {
     ...typography.labelMd,
     fontSize: 11,
     color: colors.secondary,
-  },
-  metaGrid: {
-    flexDirection: 'row',
-    gap: spacing.md,
-  },
-  metaCell: {
-    flex: 1,
-  },
-  metaLabel: {
-    ...typography.labelMd,
-    color: colors.outline,
-    marginBottom: 4,
-  },
-  metaValueRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  metaValue: {
-    ...typography.bodyLg,
-    fontWeight: '600',
-    color: colors.onSurface,
   },
   divider: {
     height: 1,

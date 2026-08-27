@@ -1,7 +1,6 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { colors, typography, spacing, dimensions } from '../../constants';
-import Icon from '../common/Icon';
+import { View, Text, StyleSheet } from 'react-native';
+import { colors, typography, spacing, dimensions, shadow } from '../../constants';
 import Avatar from '../common/Avatar';
 
 // Sticky top app bar used across Dashboard / Exams / Courses / Results / Branches.
@@ -11,9 +10,6 @@ export default function AppHeader({
   subtitle,
   avatarUri,
   avatarName,
-  onNotificationsPress,
-  showNotificationDot = true,
-  onBranchPress,
   branchLabel,
   rightExtra,
 }) {
@@ -31,18 +27,11 @@ export default function AppHeader({
 
       <View style={styles.trailing}>
         {!!branchLabel && (
-          <Pressable style={styles.branchChip} onPress={onBranchPress}>
+          <View style={styles.branchChip}>
             <Text style={styles.branchLabel}>{branchLabel}</Text>
-            <Icon name="expand-more" size={18} color={colors.onSurfaceVariant} />
-          </Pressable>
+          </View>
         )}
         {rightExtra}
-        {!!onNotificationsPress && (
-          <Pressable style={styles.iconButton} onPress={onNotificationsPress} hitSlop={8}>
-            <Icon name="notifications" size={22} color={colors.primary} />
-            {showNotificationDot && <View style={styles.dot} />}
-          </Pressable>
-        )}
       </View>
     </View>
   );
@@ -56,8 +45,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: spacing.containerPadding,
     backgroundColor: colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.surfaceVariant,
+    ...shadow.sm,
   },
   leading: {
     flexDirection: 'row',
@@ -96,23 +84,5 @@ const styles = StyleSheet.create({
   branchLabel: {
     ...typography.labelMd,
     color: colors.onSurface,
-  },
-  iconButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  dot: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: colors.error,
-    borderWidth: 2,
-    borderColor: colors.surface,
   },
 });

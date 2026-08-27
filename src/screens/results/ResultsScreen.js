@@ -1,80 +1,127 @@
-import React, { useMemo, useState } from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { View, Text, ScrollView, StyleSheet, RefreshControl, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, typography, spacing, radius } from '../../constants';
 import AppHeader from '../../components/navigation/AppHeader';
 import SearchBar from '../../components/forms/SearchBar';
 import ResultRow from '../../components/cards/ResultRow';
-import PrimaryButton from '../../components/common/PrimaryButton';
-import Icon from '../../components/common/Icon';
 import EmptyState from '../../components/feedback/EmptyState';
-import { resultStats, results, currentUser } from '../../data/mockData';
+import { useAuth } from '../../context/AuthContext';
+import { listCourses } from '../../api/courses';
+import { listCourseExams, getExamResults } from '../../api/exams';
 
 export default function ResultsScreen({ navigation }) {
+  const { user } = useAuth();
   const [query, setQuery] = useState('');
+  const [results, setResults] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const load = useCallback(async () => {
+    try {
+      const { data: courses } = await listCourses(1, 100);
+      const examLists = await Promise.all(
+        courses.slice(0, 8).map(c =>
+          listCourseExams(c.id)
+            .then(r => r.data.map(e => ({ ...e, courseName: c.name })))
+            .catch(() => []),
+        ),
+      );
+      const exams = examLists.flat().filter(e => e.status === 'PUBLISHED' || e.status === 'CLOSED');
+      const resultLists = await Promise.all(
+        exams.map(e =>
+          getExamResults(e.id)
+            .then(r => r.data.map(attempt => ({ ...attempt, examTitle: e.title, courseName: e.courseName })))
+            .catch(() => []),
+        ),
+      );
+      setResults(resultLists.flat());
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const unsub = navigation.addListener('focus', load);
+    return unsub;
+  }, [navigation, load]);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    load();
+  };
 
   const filtered = useMemo(() => {
     if (!query.trim()) return results;
     const q = query.toLowerCase();
-    return results.filter(r => r.studentName.toLowerCase().includes(q) || r.studentId.toLowerCase().includes(q));
-  }, [query]);
+    return results.filter(
+      r => String(r.student_id).includes(q) || r.examTitle?.toLowerCase().includes(q) || r.courseName?.toLowerCase().includes(q),
+    );
+  }, [query, results]);
+
+  const stats = useMemo(() => {
+    const graded = results.filter(r => r.percentage != null);
+    const passed = graded.filter(r => r.result_status === 'PASS');
+    const avg = graded.length ? graded.reduce((s, r) => s + r.percentage, 0) / graded.length : 0;
+    return {
+      avgScore: graded.length ? `${avg.toFixed(1)}%` : '—',
+      passRate: graded.length ? `${((passed.length / graded.length) * 100).toFixed(0)}%` : '—',
+      totalGraded: results.length,
+    };
+  }, [results]);
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <AppHeader
-        title="Institute ERP"
-        avatarUri={currentUser.avatarUri}
-        onNotificationsPress={() => navigation.getParent()?.navigate('More', { screen: 'Notifications' })}
-      />
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <AppHeader title="Institute ERP" subtitle={user?.full_name || user?.email} />
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      >
         <View>
           <Text style={styles.title}>Results Management</Text>
-          <Text style={styles.subtitle}>Skill Institute - Main Campus</Text>
+          <Text style={styles.subtitle}>Across all published and closed exams.</Text>
         </View>
 
         <View style={styles.statsGrid}>
-          {resultStats.map(stat => (
-            <View key={stat.id} style={styles.statBox}>
-              <Text style={styles.statLabel}>{stat.label}</Text>
-              <Text style={[styles.statValue, { color: stat.tint }]}>{stat.value}</Text>
-            </View>
-          ))}
+          <View style={styles.statBox}>
+            <Text style={styles.statLabel}>Avg Score</Text>
+            <Text style={[styles.statValue, { color: colors.primary }]}>{stats.avgScore}</Text>
+          </View>
+          <View style={styles.statBox}>
+            <Text style={styles.statLabel}>Pass Rate</Text>
+            <Text style={[styles.statValue, { color: colors.primary }]}>{stats.passRate}</Text>
+          </View>
+          <View style={styles.statBox}>
+            <Text style={styles.statLabel}>Total Graded</Text>
+            <Text style={[styles.statValue, { color: colors.onSurface }]}>{stats.totalGraded}</Text>
+          </View>
         </View>
 
-        <View style={styles.toolsRow}>
-          <SearchBar
-            value={query}
-            onChangeText={setQuery}
-            placeholder="Search by student name or ID..."
-            style={styles.searchFlex}
-          />
-        </View>
-        <View style={styles.actionButtonsRow}>
-          <Pressable style={styles.secondaryChip}>
-            <Icon name="filter-list" size={18} color={colors.onSurface} />
-            <Text style={styles.secondaryChipText}>Filter</Text>
-          </Pressable>
-          <Pressable style={styles.secondaryChip}>
-            <Icon name="download" size={18} color={colors.onSurface} />
-            <Text style={styles.secondaryChipText}>Export</Text>
-          </Pressable>
-        </View>
+        <SearchBar
+          value={query}
+          onChangeText={setQuery}
+          placeholder="Search by student ID, exam, or course..."
+        />
 
-        <View style={styles.listCard}>
-          {filtered.length === 0 && (
-            <EmptyState icon="assessment" title="No results found" description="Try a different search term." />
-          )}
-          {filtered.map((result, index) => (
-            <ResultRow
-              key={result.id}
-              result={result}
-              index={index}
-              onPress={() => navigation.navigate('ResultDetails', { result })}
-            />
-          ))}
-        </View>
-
-        <PrimaryButton title="Publish Results" icon="publish" iconPosition="left" onPress={() => {}} style={styles.publishButton} />
+        {loading ? (
+          <ActivityIndicator color={colors.primary} style={styles.loader} />
+        ) : (
+          <View style={styles.listCard}>
+            {filtered.length === 0 && (
+              <EmptyState icon="assessment" title="No results found" description="Submitted exam attempts will show here once exams are published." />
+            )}
+            {filtered.map((result, index) => (
+              <ResultRow
+                key={result.id}
+                result={result}
+                index={index}
+                onPress={() => navigation.navigate('ResultDetails', { attemptId: result.id })}
+              />
+            ))}
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -109,6 +156,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(195,198,215,0.2)',
     padding: spacing.md,
+    gap: 4,
   },
   statLabel: {
     ...typography.labelMd,
@@ -119,30 +167,8 @@ const styles = StyleSheet.create({
     ...typography.display,
     fontSize: 28,
   },
-  toolsRow: {
-    flexDirection: 'row',
-  },
-  searchFlex: {
-    flex: 1,
-  },
-  actionButtonsRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  secondaryChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: radius.md,
-    backgroundColor: colors.surfaceContainerLow,
-    borderWidth: 1,
-    borderColor: colors.outlineVariant,
-  },
-  secondaryChipText: {
-    ...typography.bodyMd,
-    color: colors.onSurface,
+  loader: {
+    marginTop: spacing.xl,
   },
   listCard: {
     backgroundColor: colors.surface,
@@ -150,10 +176,5 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(195,198,215,0.2)',
     overflow: 'hidden',
-  },
-  publishButton: {
-    alignSelf: 'flex-end',
-    paddingHorizontal: 24,
-    width: undefined,
   },
 });

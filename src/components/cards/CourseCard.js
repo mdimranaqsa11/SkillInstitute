@@ -2,25 +2,33 @@ import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { colors, radius, typography, spacing } from '../../constants';
 import Icon from '../common/Icon';
+import StatusBadge from '../common/StatusBadge';
 
-export default function CourseCard({ course, onPress }) {
+const TINTS = [colors.primaryContainer, colors.tertiary, colors.secondary, colors.error];
+const ICONS = ['calculate', 'science', 'code', 'menu-book', 'palette', 'language'];
+const tintFor = id => TINTS[id % TINTS.length];
+const iconFor = id => ICONS[id % ICONS.length];
+
+export default function CourseCard({ course, students = 0, onPress }) {
+  const tint = tintFor(course.id);
+
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [styles.card, pressed && styles.pressed]}>
-      <View style={[styles.tint, { backgroundColor: `${course.tint}0D` }]} />
+      <View style={[styles.tint, { backgroundColor: `${tint}0D` }]} />
       <View style={styles.headerRow}>
-        <View style={[styles.iconWrap, { backgroundColor: `${course.tint}33` }]}>
-          <Icon name={course.icon} size={24} color={course.tint} />
+        <View style={[styles.iconWrap, { backgroundColor: `${tint}33` }]}>
+          <Icon name={iconFor(course.id)} size={24} color={tint} />
         </View>
-        <Icon name="more-vert" size={20} color={colors.onSurfaceVariant} />
+        <StatusBadge status={course.status} />
       </View>
       <View style={styles.body}>
-        <Text style={[styles.code, { color: course.tint }]}>{course.code}</Text>
-        <Text style={styles.title} numberOfLines={2}>{course.title}</Text>
+        <Text style={[styles.code, { color: tint }]}>{course.code}</Text>
+        <Text style={styles.title} numberOfLines={2}>{course.name}</Text>
       </View>
       <View style={styles.footer}>
         <View style={styles.studentsRow}>
           <Icon name="group" size={16} color={colors.onSurfaceVariant} />
-          <Text style={styles.studentsText}>{course.students} Students</Text>
+          <Text style={styles.studentsText}>{students} Enrolled</Text>
         </View>
         <Icon name="chevron-right" size={20} color={colors.outline} />
       </View>

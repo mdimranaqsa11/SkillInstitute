@@ -5,26 +5,25 @@ import { colors, typography, spacing, radius } from '../../constants';
 import DetailHeader from '../../components/navigation/DetailHeader';
 import Avatar from '../../components/common/Avatar';
 import ListItem from '../../components/common/ListItem';
-import PrimaryButton from '../../components/common/PrimaryButton';
-import { currentUser } from '../../data/mockData';
+import { useAuth } from '../../context/AuthContext';
 
 export default function ProfileScreen({ navigation }) {
+  const { user } = useAuth();
+
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <DetailHeader title="Profile" onBack={() => navigation.goBack()} />
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.headerCard}>
-          <Avatar uri={currentUser.avatarUri} name={currentUser.fullName} size={72} />
-          <Text style={styles.name}>{currentUser.fullName}</Text>
-          <Text style={styles.role}>{currentUser.role} • {currentUser.branch}</Text>
+          <Avatar name={user?.full_name || user?.email} size={72} />
+          <Text style={styles.name}>{user?.full_name || user?.email}</Text>
+          <Text style={styles.role}>{user?.role?.replace(/_/g, ' ')}</Text>
         </View>
 
         <View style={styles.section}>
-          <ListItem icon="mail" label="Email" sublabel={currentUser.email} showChevron={false} />
-          <ListItem icon="business" label="Branch" sublabel={currentUser.branch} showChevron={false} />
+          <ListItem icon="mail" label="Email" sublabel={user?.email} showChevron={false} />
+          <ListItem icon="badge" label="Role" sublabel={user?.role?.replace(/_/g, ' ')} showChevron={false} />
         </View>
-
-        <PrimaryButton title="Edit Profile" icon="edit" iconPosition="left" onPress={() => {}} />
       </ScrollView>
     </SafeAreaView>
   );

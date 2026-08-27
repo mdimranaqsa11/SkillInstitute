@@ -5,37 +5,41 @@ import { colors, typography, spacing, radius } from '../../constants';
 import AppHeader from '../../components/navigation/AppHeader';
 import Avatar from '../../components/common/Avatar';
 import ListItem from '../../components/common/ListItem';
-import { currentUser } from '../../data/mockData';
 import { useAuth } from '../../context/AuthContext';
+import { can } from '../../constants/roles';
 
 export default function MoreScreen({ navigation }) {
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <AppHeader title="More" onNotificationsPress={() => navigation.navigate('Notifications')} />
+      <AppHeader title="More" />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.profileCard}>
-          <Avatar uri={currentUser.avatarUri} name={currentUser.fullName} size={48} />
+          <Avatar name={user?.full_name || user?.email} size={48} />
           <View style={styles.profileInfo}>
-            <Text style={styles.profileName}>{currentUser.fullName}</Text>
-            <Text style={styles.profileBranch}>{currentUser.branch}</Text>
+            <Text style={styles.profileName}>{user?.full_name || user?.email}</Text>
+            <Text style={styles.profileBranch}>{user?.role?.replace(/_/g, ' ')}</Text>
           </View>
         </View>
 
         <View style={styles.section}>
-          <ListItem icon="storefront" label="Branches" onPress={() => navigation.navigate('Branches')} />
+          {can(user, 'manageBranches') && (
+            <ListItem icon="storefront" label="Branches" onPress={() => navigation.navigate('Branches')} />
+          )}
+          <ListItem icon="domain" label="Institute Profile" onPress={() => navigation.navigate('InstituteDetails')} />
+          {can(user, 'viewAuditLogs') && (
+            <ListItem icon="history" label="Audit Logs" onPress={() => navigation.navigate('AuditLogs')} />
+          )}
           <ListItem icon="account-circle" label="Profile" onPress={() => navigation.navigate('Profile')} />
           <ListItem icon="settings" label="Settings" onPress={() => navigation.navigate('Settings')} />
-          <ListItem icon="notifications" label="Notifications" onPress={() => navigation.navigate('Notifications')} />
-          <ListItem icon="help" label="Help" onPress={() => {}} />
         </View>
 
         <View style={styles.section}>
           <ListItem icon="logout" label="Logout" danger showChevron={false} onPress={logout} />
         </View>
 
-        <Text style={styles.version}>v2.1.0</Text>
+        <Text style={styles.version}>v1.0.0</Text>
       </ScrollView>
     </SafeAreaView>
   );
